@@ -63,67 +63,23 @@ class Block {
 	 * @return string The markup of the block.
 	 */
 	public function render_callback( $attributes, $content, $block ) {
-		$post_types = get_post_types(  [ 'public' => true ] );
+		$types_array = array( 'page', 'attachment' , 'elementor_library', 'e-landing-page' );
+		$post_types = get_post_types(  [ 'public' => true ], 'names', 'and' );
 		$class_name = $attributes['className'];
-		ob_start();
-
-		?>
-        <div class="<?php echo $class_name; ?>">
-			<h2>Post Counts</h2>
-			<ul>
-			<?php
-			foreach ( $post_types as $post_type_slug ) :
-                $post_type_object = get_post_type_object( $post_type_slug  );
-                $post_count = count(
-                    get_posts(
-						[
-							'post_type' => $post_type_slug,
-							'posts_per_page' => -1,
-						]
-					)
-                );
-
-				?>
-				<li><?php echo 'There are ' . $post_count . ' ' .
-					  $post_type_object->labels->name . '.'; ?></li>
-			<?php endforeach;	?>
-			</ul><p><?php echo 'The current post ID is ' . $_GET['post_id'] . '.'; ?></p>
-
-			<?php
-			$query = new WP_Query(  array(
-				'post_type' => ['post', 'page'],
-				'post_status' => 'any',
-				'date_query' => array(
-					array(
-						'hour'      => 9,
-						'compare'   => '>=',
-					),
-					array(
-						'hour' => 17,
-						'compare'=> '<=',
-					),
-				),
-                'tag'  => 'foo',
-                'category_name'  => 'baz',
-				  'post__not_in' => [ get_the_ID() ],
-				  'meta_value' => 'Accepted',
-			));
-
-			if ( $query->found_posts ) :
-				?>
-				 <h2>Any 5 posts with the tag of foo and the category of baz</h2>
-                <ul>
-                <?php
-
-                 foreach ( array_slice( $query->posts, 0, 5 ) as $post ) :
-                    ?><li><?php echo $post->post_title ?></li><?php
-				endforeach;
+		$id_name = $attributes['idName'];
+	    	printf( '<div class="%1$s" id="%2$s">', esc_html($class_name), esc_html($id_name));
+	    	printf( '<h2>%1$s</h2>', __('Post Counts','SiteCounts'));
+		if($content != ''):
+	    	printf( '<p>%1$s</p>', esc_html($content));
+		endif;
+		print('<ul>');
+		foreach ( $post_types as $post_type ) :
+			if(!in_array($post_type, $types_array)):
+				$post_count = wp_count_posts($post_type)->publish;
+				printf( '<li>There are %1$s %2$s.</li>', $post_count, $post_type);
 			endif;
-		 	?>
-			</ul>
-		</div>
-		<?php
-
-		return ob_get_clean();
+		endforeach;
+		print('</ul>');
+		print('</div>');
 	}
 }
